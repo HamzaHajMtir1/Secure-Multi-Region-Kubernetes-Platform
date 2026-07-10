@@ -1,0 +1,38 @@
+name: Secure CI/CD
+on:
+  push:
+    branches: [main]
+
+jobs:
+  security-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Secret scanning
+        uses: gitleaks/gitleaks-action@v2
+
+      - name: Build image
+        run: docker build -t acrplatformprimary.azurecr.io/app:${{ github.sha }} .
+
+      - name: Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: acrplatformprimary.azurecr.io/app:${{ github.sha }}
+          severity: CRITICAL,HIGH
+          exit-code: 1
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Push to ACR
+        run: |
+          az acr login --name acrplatformprimary
+          docker push acrplatformprimary.azurecr.io/app:${{ github.sha }}
+
+      - name: Deploy to AKS
+        run: |
+          az aks get-credentials --name aks-primary --resource-group rg-platform-primary
+          kubectl set image deployment/app app=acrplatformprimary.azurecr.io/app:${{ github.sha }}

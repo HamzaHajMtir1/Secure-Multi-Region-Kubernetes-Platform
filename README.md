@@ -203,6 +203,10 @@ Example response
 
 ---
 
+
+**Note: Automated deployment to Azure is not enabled in this repository because the Azure subscription is managed by an institutional tenant that restricts Service Principal creation. Infrastructure provisioning and application deployment were successfully validated manually on Azure AKS.**
+
+
 ## 👨‍💻 Author
 
 **Hamza Haj Mtir**
